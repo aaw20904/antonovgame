@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+       
+        
+        <title>JS-practic</title>
+        <style>
+    
+        </style>
+    </head>
+    <body>
+        
+        <canvas id='onscreen' width="640" height="480" style=' border: 1px solid red;' ></canvas>
+    </body>
+    <script>
+        function EnemyAirplane (objX) {
+            /**coordinates of the plane*/
+            var coord = Object.assign({}, objX.coord);
+            /**coordinates of three images*/
+            var plImgCoords = objX.plImgCoords;
+            /*a Bomb object*/
+            var iBomb = objX.bomb;
+          
+            /***a Canvas on the screen */
+            var scrCanvas = objX.scrC;
+            /**size x/width/ and y/height/ of resource pictures*/ 
+            var size = objX.size;
+            /***a stop coordinate for the plane (in develop)*/
+            var stopPoint = objX.stop;
+            /**a flight vector*/
+            var vector = Object.assign({}, objX.vect);
+            /*A "square" for calculations*/
+            var square = {x1:0, y1:0, x2:0, y2:0};
+            var variant = true;
+            var imgRes = objX.imgRes;
+            /*calculate a default square*/ 
+            calcSquare();
+        /**********************************************
+        -------P R I V A T E   functions------------************/
+        function drawPlane() {
+           
+            var scrCtx = scrCanvas.getContext("2d");
+             
+            
+            if ((coord.x < scrCanvas.width) && (coord.y < scrCnvas.height)) {
+                  if (variant === true){
+                       scrCtx.drawImage(imgRes, plImgCoords[vector.direction].x, plImgCoords[vector.direction].y, size, size, coord.x, coord.y, size, size);
+                  } else {
+                       scrCtx.drawImage(imgRes, plImgCoords[vector.direction].x+size, plImgCoords[vector.direction].y, size, size, coord.x, coord.y, size, size);
+                  }
+                
+                variant = !variant;
+            } 
+        }
+            
+        /*************************/
+        function drawExplode() {
+            
+            var scrCtx = scrCanvas.getContext("2d");
+            
+            
+            if ((coord.x < scrCanvas.width) && (coord.y < scrCnvas.height)) {
+                  
+                      scrCtx.drawImage(imgRes, plImgCoords["Explode"].x, plImgCoords["Explode"].y, size, size, coord.x, coord.y, size, size);
+            }
+            
+        }
+            
+        /*********************************/
+        function step () {
+            /*checking - if the next point value in a screen area*/
+            if((coord.x <= scrCanvas.width) && (coord.x >= 0)) {
+                  if((coord.y <= scrCanvas.width) &&(coord.y > 0)) {
+                      switch(vector.direction) {
+                          case "O":
+                              coord.x += vector.delta;
+                          break;
+                          case "W":
+                              coord.x -= vector.delta;
+                          break;
+                          case "S":
+                              coord.y += vector.delta;
+                          break;
+                          case "N":
+                              coord.y -= vector.delta;
+                          break;
+                          case "NO":
+                               coord.x += vector.delta;
+                               coord.y -= vector.delta;
+                          break;
+                          case "SO":
+                              coord.x += vector.delta;
+                              coord.y += vector.delta;
+                          case "SW":
+                              coord.x -= vector.delta;
+                              coord.y += vector.delta;
+                          break;
+                          case "NW":
+                               coord.x -= vector.delta;
+                              coord.y += vector.delta;
+                          break;
+                          default:
+                      }
+                   
+                  }
+            }
+        }
+            
+         /*******************/
+        function calcSquare () {
+            square.x1 = coord.x;
+            square.y1 = coord.y;
+            square.x2 = coord.x + size;
+            square.y2 = coord.y + size;
+        }
+            /*************
+            P U B L I C functions*/
+            return {
+             
+             isIntoPlane: function (x, y) {
+                    if((x >= square.x2) && (x <= square.x1)) {
+                        if((x >= square.y2) && (x <= square.y1)) {
+                        return true;
+                        }
+                    }
+                    return false;
+             },
+        /***/
+             cbOnTimer: function() {
+                step();
+                drawPlane();
+             },
+       /****/
+             getCoord: function() {
+                 return Object.assign({}, coord);
+             },
+        /****/
+             registerOnCommand: function (f) {
+                try {
+                    if (!f) {
+                        throw new Error("bad function");
+                    }
+                }
+                 catch(q) {
+                      alert("execption:" + q);
+                 }
+                 onCommand = f;
+             },
+        /*******/
+            cbCommand: function (x) {
+                switch (x){
+                    case 'fire':
+                        iBomb.go();
+                    break;
+                    case "explode":
+                        drawExplode();
+                        onCommand('explode');
+                    break;
+                    case 'away':
+                        onCommand('away');
+                    break;
+                    default:
+                }
+            },
+                /***/
+             setVector: function(delta, direction) {
+               vector.delta = delta;
+               vector.direction = direction;
+             }
+             
+           }
+        
+    }
+        
+        
+     var objForInit = {};
+     memCanvas = document.createElement("canvas");
+     objForInit.coord = {x:0, y:0};
+     objForInit.plImgCoords = {O:{x:0,y:0}, S:{x:160,y:0}, W:{x:320,y:0}, N:{x:480, y:0},Explode:{x:640, y:0}, NO:{x:0,y:80}, NW:{x:160,y:80}, SO:{x:320,y:80}, SW:{x:480,y:80}};
+     objForInit.scrC = document.getElementById("onscreen");
+     objForInit.size = 80;
+     objForInit.imgRes = document.createElement("img");
+     objForInit.imgRes.src =  "file:\./resources.svg";
+     objForInit.vector = {delta:5, direction:"O"};
+     memCanvas.width = 1200;
+     memCanvas.height = 800;
+     var enemyPlane = new EnemyAirplane(objForInit);
+     enemyPlane.registerOnCommand(function(){console.log("cmd!");});
+        function onClick(){
+            var ctx =memCanvas.getContext("2d");
+            var scr = objForInit.scrC.getContext("2d");
+              var copy = ctx.getImageData(0,0,640,480);
+              scr.putImageData(copy, 0,0);
+             enemyPlane.cbOnTimer();
+             
+        }
+        
+     var memContext =memCanvas.getContext("2d");
+      
+     var scrContext = objForInit.scrC.getContext("2d");
+     var bckImage = document.createElement("img");
+      
+     bckImage.src =  "file:\sky.jpg";
+          bckImage.crossOrigin = "Anonymous";
+     bckImage.addEventListener("load",function(){
+         memContext.drawImage(bckImage, 0,0);
+         
+     }, false);
+     objForInit.imgRes.addEventListener("load", function(){
+       memContext.drawImage(objForInit.imgRes, 0,740);
+     }, false);
+         
+         
+       objForInit.scrC.addEventListener('click',onClick,false);
+    </script>
+</html>
